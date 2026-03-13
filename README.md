@@ -1,6 +1,6 @@
-# Trade Bot — Kripto Sinyal Motoru
+# Demir Trade Bot — Crypto Signal Engine
 
-## Mimari
+## Architecture
 ```
                     ┌────────────┐
                     │  Telegram   │
@@ -29,61 +29,39 @@
    └──────────┘     └──────────┘       └──────────┘
 ```
 
-## Kurulum
+## Setup
 
 ```bash
-# 1. Sanal ortam oluştur
+# 1. Create virtual environment
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 
-# 2. Bağımlılıkları yükle
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Ortam değişkenlerini ayarla
+# 3. Configure environment variables
 cp .env.example .env
-# .env dosyasını düzenle: Telegram token/chat id, opsiyonel CryptoPanic API key
+# Edit .env: Telegram token/chat id, optional CryptoPanic API key
 
-# 4. Başlat
+# 4. Run
 python main.py
 ```
 
-## Sinyal Setup'ları
+## Signal Setups
 
-| Setup | İsim | Koşullar | Tür |
+| Setup | Name | Conditions | Type |
 |-------|------|----------|-----|
-| A | Reversal / Sweep | Likidasyon havuzu sweep + OI düşüşü + Taker flip + CVD patlama | Scalp / Day Trade |
-| B | Divergence / Trap | OI artış + Futures CVD ↔ Spot CVD uyumsuzluğu + FR extreme | Day Trade |
-| C | Momentum / Whale | CVD çift yönlü %50+ spike + Whale agresyonu | Scalp |
+| A | Reversal / Sweep | Liquidation pool sweep + OI drop + taker ratio flip + CVD spike | Scalp / Day Trade |
+| B | Divergence / Trap | OI increase + Futures CVD ↔ Spot CVD divergence + extreme FR | Day Trade |
+| C | Momentum / Whale | Bi-directional CVD 50%+ spike + whale aggression | Scalp |
 
-## Not
-Bu bot **işlem açmaz**, yalnızca Telegram üzerinden A-Kalite sinyal gönderir.
+## Note
+This bot **does not open trades**; it only sends A-grade signals via Telegram.
 
-## Konfigürasyon Notları
+## Configuration Notes
 
-- Borsa verileri public API üzerinden alınır, borsa API key gerekmez.
-- `SYMBOLS=auto` ayarı ile Bybit USDT perpetual sembolleri otomatik çekilir.
-- Telegram mesajı için `TELEGRAM_BOT_TOKEN` ve `TELEGRAM_CHAT_ID` zorunludur.
-- `CRYPTOPANIC_API_KEY` boş bırakılırsa haber servisi "ulaşılamıyor/ayarsız" olarak raporlanır.
+- Exchange data is fetched via public APIs; no exchange API key is required.
+- With `SYMBOLS=auto`, all Bybit USDT perpetual symbols are fetched automatically.
+- `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are required for Telegram alerts.
+- If `CRYPTOPANIC_API_KEY` is empty, the news service is reported as unavailable/unconfigured.
 
-## GitHub'a Gönderim (Güvenli)
-
-```bash
-# 1) Repo başlat
-git init
-
-# 2) Hassas verileri kontrol et (.env commit ETME)
-git status
-
-# 3) Dosyaları ekle
-git add .
-
-# 4) İlk commit
-git commit -m "Initial commit"
-
-# 5) GitHub remote ekle
-git remote add origin <REPO_URL>
-
-# 6) Push
-git branch -M main
-git push -u origin main
-```
