@@ -48,11 +48,11 @@ class BaseExchange(ABC):
         self._running = True
         logger.info("[%s] Başlatılıyor… Semboller: %s", self.name, self.symbols)
         self._tasks = [
-            asyncio.create_task(self._safe(self._ws_trades())),
-            asyncio.create_task(self._safe(self._ws_orderbook())),
-            asyncio.create_task(self._safe(self._ws_liquidations())),
-            asyncio.create_task(self._safe(self._poll_open_interest())),
-            asyncio.create_task(self._safe(self._poll_funding_rate())),
+            asyncio.create_task(self._safe(self._ws_trades)),
+            asyncio.create_task(self._safe(self._ws_orderbook)),
+            asyncio.create_task(self._safe(self._ws_liquidations)),
+            asyncio.create_task(self._safe(self._poll_open_interest)),
+            asyncio.create_task(self._safe(self._poll_funding_rate)),
         ]
 
     async def stop(self):
@@ -62,11 +62,11 @@ class BaseExchange(ABC):
             t.cancel()
         logger.info("[%s] Durduruldu.", self.name)
 
-    async def _safe(self, coro):
+    async def _safe(self, coro_func):
         """Hata yakalayıcı wrapper — bir stream çökerse yeniden başlatır."""
         while self._running:
             try:
-                await coro
+                await coro_func()
             except asyncio.CancelledError:
                 break
             except Exception as exc:
