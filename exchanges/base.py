@@ -62,6 +62,14 @@ class BaseExchange(ABC):
             t.cancel()
         logger.info("[%s] Durduruldu.", self.name)
 
+    # Tüm WS bağlantıları için ortak parametreler
+    WS_KWARGS = {
+        "ping_interval": 25,
+        "ping_timeout": 60,
+        "close_timeout": 5,
+        "max_size": 2**22,  # 4 MB
+    }
+
     async def _safe(self, coro_func):
         """Hata yakalayıcı wrapper — bir stream çökerse yeniden başlatır."""
         while self._running:
@@ -70,8 +78,8 @@ class BaseExchange(ABC):
             except asyncio.CancelledError:
                 break
             except Exception as exc:
-                logger.exception("[%s] Stream hatası, 5s sonra tekrar denenecek: %s", self.name, exc)
-                await asyncio.sleep(5)
+                logger.warning("[%s] %s bağlantı koptu, 3s sonra yeniden bağlanılacak.", self.name, coro_func.__name__)
+                await asyncio.sleep(3)
 
     # ── WebSocket Akışları (Alt sınıflar implemente eder) ──
 

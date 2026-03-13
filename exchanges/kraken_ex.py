@@ -61,7 +61,7 @@ class KrakenExchange(BaseExchange):
                 "symbol": pairs,
             },
         }
-        async with websockets.connect(WS_SPOT, ping_interval=20) as ws:
+        async with websockets.connect(WS_SPOT, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps(sub_msg))
             logger.info("[kraken] Spot trade stream bağlandı.")
             async for msg in ws:
@@ -91,7 +91,7 @@ class KrakenExchange(BaseExchange):
                 "depth": 25,
             },
         }
-        async with websockets.connect(WS_SPOT, ping_interval=20) as ws:
+        async with websockets.connect(WS_SPOT, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps(sub_msg))
             logger.info("[kraken] Orderbook stream bağlandı.")
             async for msg in ws:

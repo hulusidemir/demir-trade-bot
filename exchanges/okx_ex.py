@@ -44,7 +44,7 @@ class OKXExchange(BaseExchange):
 
     async def _ws_trades(self):
         args = [{"channel": "trades", "instId": self._inst_id(s)} for s in self.symbols]
-        async with websockets.connect(WS_PUBLIC, ping_interval=20) as ws:
+        async with websockets.connect(WS_PUBLIC, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps({"op": "subscribe", "args": args}))
             logger.info("[okx] Futures trade stream bağlandı.")
             async for msg in ws:
@@ -66,7 +66,7 @@ class OKXExchange(BaseExchange):
 
     async def _ws_orderbook(self):
         args = [{"channel": "books5", "instId": self._inst_id(s)} for s in self.symbols]
-        async with websockets.connect(WS_PUBLIC, ping_interval=20) as ws:
+        async with websockets.connect(WS_PUBLIC, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps({"op": "subscribe", "args": args}))
             logger.info("[okx] Orderbook stream bağlandı.")
             async for msg in ws:
@@ -87,7 +87,7 @@ class OKXExchange(BaseExchange):
 
     async def _ws_liquidations(self):
         args = [{"channel": "liquidation-orders", "instType": "SWAP"}]
-        async with websockets.connect(WS_PUBLIC, ping_interval=20) as ws:
+        async with websockets.connect(WS_PUBLIC, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps({"op": "subscribe", "args": args}))
             logger.info("[okx] Likidasyon stream bağlandı.")
             async for msg in ws:

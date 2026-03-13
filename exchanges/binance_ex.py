@@ -48,7 +48,7 @@ class BinanceExchange(BaseExchange):
         streams = "/".join(f"{self._normalize_symbol(s)}@aggTrade" for s in self.symbols)
         url = f"{WS_BASE}/{streams}" if len(self.symbols) == 1 else f"wss://fstream.binance.com/stream?streams={streams}"
 
-        async with websockets.connect(url, ping_interval=20) as ws:
+        async with websockets.connect(url, **self.WS_KWARGS) as ws:
             logger.info("[binance] Futures trade stream bağlandı.")
             async for msg in ws:
                 data = json.loads(msg)
@@ -70,7 +70,7 @@ class BinanceExchange(BaseExchange):
         streams = "/".join(f"{self._normalize_symbol(s)}@aggTrade" for s in self.symbols)
         url = f"{SPOT_WS_BASE}/{streams}" if len(self.symbols) == 1 else f"wss://stream.binance.com:9443/stream?streams={streams}"
 
-        async with websockets.connect(url, ping_interval=20) as ws:
+        async with websockets.connect(url, **self.WS_KWARGS) as ws:
             logger.info("[binance] Spot trade stream bağlandı.")
             async for msg in ws:
                 data = json.loads(msg)
@@ -93,7 +93,7 @@ class BinanceExchange(BaseExchange):
         streams = "/".join(f"{self._normalize_symbol(s)}@depth20@100ms" for s in self.symbols)
         url = f"wss://fstream.binance.com/stream?streams={streams}"
 
-        async with websockets.connect(url, ping_interval=20) as ws:
+        async with websockets.connect(url, **self.WS_KWARGS) as ws:
             logger.info("[binance] Orderbook stream bağlandı.")
             async for msg in ws:
                 data = json.loads(msg)
@@ -114,7 +114,7 @@ class BinanceExchange(BaseExchange):
         streams = "/".join(f"{self._normalize_symbol(s)}@forceOrder" for s in self.symbols)
         url = f"wss://fstream.binance.com/stream?streams={streams}"
 
-        async with websockets.connect(url, ping_interval=20) as ws:
+        async with websockets.connect(url, **self.WS_KWARGS) as ws:
             logger.info("[binance] Likidasyon stream bağlandı.")
             async for msg in ws:
                 data = json.loads(msg)

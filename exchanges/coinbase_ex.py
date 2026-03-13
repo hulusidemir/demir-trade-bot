@@ -47,7 +47,7 @@ class CoinbaseExchange(BaseExchange):
             "product_ids": product_ids,
             "channel": "market_trades",
         }
-        async with websockets.connect(WS_URL, ping_interval=20) as ws:
+        async with websockets.connect(WS_URL, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps(sub_msg))
             logger.info("[coinbase] Trade stream bağlandı.")
             async for msg in ws:
@@ -75,7 +75,7 @@ class CoinbaseExchange(BaseExchange):
             "product_ids": product_ids,
             "channel": "level2",
         }
-        async with websockets.connect(WS_URL, ping_interval=20) as ws:
+        async with websockets.connect(WS_URL, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps(sub_msg))
             logger.info("[coinbase] Orderbook stream bağlandı.")
             async for msg in ws:

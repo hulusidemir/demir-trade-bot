@@ -133,10 +133,10 @@ class Engine:
             self.aggregator.run_evaluation_loop(interval_sec=5.0)
         ))
 
-        # Haber tarayıcı
-        tasks.append(asyncio.create_task(
-            self.news_scanner.start_scanning()
-        ))
+        # Haber tarayıcı (CryptoPanic API devre dışı)
+        # tasks.append(asyncio.create_task(
+        #     self.news_scanner.start_scanning()
+        # ))
 
         # Runtime sağlık monitörü
         tasks.append(asyncio.create_task(

@@ -61,7 +61,7 @@ class Thresholds:
     spoof_ttl_sec: float = 5.0             # 5 sn'den kısa yaşayan devasa emirler
 
     # Whale aggression — standart sapmanın kaç katı
-    whale_std_multiplier: float = 3.0
+    whale_std_multiplier: float = 4.0
 
     # OI düşüş eşiği (yüzde) — likidasyon kanıtı
     oi_drop_pct: float = 3.0

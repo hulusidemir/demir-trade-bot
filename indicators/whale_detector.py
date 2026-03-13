@@ -1,7 +1,10 @@
 """
 Trade Bot — Whale Aggression Detector
-Belirli bir borsada toplam hacmin standart sapmasını 3x aşan
-taker alım/satım tespiti.
+Profesyonel seviye balina tespiti:
+- Minimum USD hacim eşiği (küçük işlemleri filtreler)
+- 5 saniyelik kümeleme penceresi (cluster detection)
+- Yeterli istatistiksel veri gereksinimi (min 30 bucket)
+- Standart sapmanın 4x+ aşılması
 """
 
 from __future__ import annotations
@@ -16,19 +19,37 @@ from core.models import TradeData, WhaleEvent
 
 logger = logging.getLogger("indicator.whale")
 
-_WINDOW = 300   # 5 dakikalık pencere
+_WINDOW = 300   # 5 dakikalık istatistik penceresi
 _MAX_TICKS = 20_000
+_CLUSTER_SEC = 5  # 5 saniyelik kümeleme penceresi
+
+# Coin bazlı minimum USD eşikleri
+_MIN_VOLUME_USD: Dict[str, float] = {
+    "BTCUSDT": 100_000,
+    "BTC-USDT-SWAP": 100_000,
+    "BTC-USDT": 100_000,
+    "ETHUSDT": 50_000,
+    "ETH-USDT-SWAP": 50_000,
+    "ETH-USDT": 50_000,
+}
+_MIN_VOLUME_DEFAULT = 20_000  # Diğer tüm coinler için $20K
 
 
 class WhaleDetector:
     """
     Exchange-Specific Whale Aggression:
     Tek bir borsada saniyeler içinde toplam hacmin
-    standart sapmasını 3x aşan taker alımı/satımı.
+    standart sapmasını 4x aşan taker alımı/satımı.
+
+    Filtreler:
+    - Minimum USD hacim eşiği (BTC $100K, ETH $50K, diğer $20K)
+    - 5 saniyelik kümeleme penceresi
+    - Min 30 istatistik bucket (istatistiksel güvenilirlik)
     """
 
-    def __init__(self, std_multiplier: float = 3.0):
+    def __init__(self, std_multiplier: float = 4.0, min_volume_usd: float = 0):
         self.std_multiplier = std_multiplier
+        self._min_volume_override = min_volume_usd  # 0 = coin bazlı otomatik
         # {(symbol, exchange): deque[(timestamp, volume_usd, is_buy)]}
         self._ticks: Dict[Tuple[str, str], deque] = defaultdict(
             lambda: deque(maxlen=_MAX_TICKS)
@@ -37,6 +58,12 @@ class WhaleDetector:
         self._recent_events: Dict[str, deque] = defaultdict(
             lambda: deque(maxlen=100)
         )
+
+    def _get_min_volume(self, symbol: str) -> float:
+        """Coin bazlı minimum USD hacim eşiği."""
+        if self._min_volume_override > 0:
+            return self._min_volume_override
+        return _MIN_VOLUME_USD.get(symbol, _MIN_VOLUME_DEFAULT)
 
     # ── Veri Girişi ───────────────────────────────
 
@@ -51,22 +78,36 @@ class WhaleDetector:
 
         self._ticks[key].append((trade.timestamp, vol_usd, is_buy))
 
-        # Son 1 saniyedeki toplam hacmi hesapla
+        # Son 5 saniyedeki toplam hacmi hesapla (kümeleme)
         now = trade.timestamp
         recent_vol = 0.0
-        for ts, v, _ in reversed(self._ticks[key]):
-            if now - ts > 1.0:
+        recent_buy_vol = 0.0
+        recent_sell_vol = 0.0
+        for ts, v, buy in reversed(self._ticks[key]):
+            if now - ts > _CLUSTER_SEC:
                 break
             recent_vol += v
+            if buy:
+                recent_buy_vol += v
+            else:
+                recent_sell_vol += v
 
-        # Standart sapma hesapla (son 5 dk'lık 1-saniyelik dilimler)
+        # Minimum USD hacim filtresi
+        min_vol = self._get_min_volume(trade.symbol)
+        if recent_vol < min_vol:
+            return None
+
+        # Standart sapma hesapla (son 5 dk'lık 5-saniyelik dilimler)
         mean, std = self._calc_stats(key, now)
 
         if std > 0 and recent_vol > mean + (std * self.std_multiplier):
+            # Baskın yönü belirle
+            side = "BUY" if recent_buy_vol > recent_sell_vol else "SELL"
+
             event = WhaleEvent(
                 exchange=trade.exchange,
                 symbol=trade.symbol,
-                side="BUY" if is_buy else "SELL",
+                side=side,
                 volume=recent_vol,
                 std_multiplier=recent_vol / std if std > 0 else 0,
                 timestamp=now,
@@ -82,7 +123,7 @@ class WhaleDetector:
 
     def _calc_stats(self, key: Tuple[str, str], now: float) -> Tuple[float, float]:
         """
-        1-saniyelik dilimlerle mean ve std hesapla.
+        5-saniyelik dilimlerle mean ve std hesapla.
         """
         window_start = now - _WINDOW
         buckets: Dict[int, float] = defaultdict(float)
@@ -90,10 +131,10 @@ class WhaleDetector:
         for ts, v, _ in self._ticks[key]:
             if ts < window_start:
                 continue
-            bucket = int(ts)
+            bucket = int(ts / _CLUSTER_SEC)
             buckets[bucket] += v
 
-        if len(buckets) < 10:
+        if len(buckets) < 30:
             return 0.0, 0.0
 
         values = list(buckets.values())

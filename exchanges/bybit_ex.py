@@ -42,7 +42,7 @@ class BybitExchange(BaseExchange):
 
     async def _ws_trades(self):
         subs = [f"publicTrade.{self._normalize_symbol(s)}" for s in self.symbols]
-        async with websockets.connect(WS_LINEAR, ping_interval=20) as ws:
+        async with websockets.connect(WS_LINEAR, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps({"op": "subscribe", "args": subs}))
             logger.info("[bybit] Futures trade stream bağlandı.")
             async for msg in ws:
@@ -63,7 +63,7 @@ class BybitExchange(BaseExchange):
 
     async def _ws_orderbook(self):
         subs = [f"orderbook.50.{self._normalize_symbol(s)}" for s in self.symbols]
-        async with websockets.connect(WS_LINEAR, ping_interval=20) as ws:
+        async with websockets.connect(WS_LINEAR, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps({"op": "subscribe", "args": subs}))
             logger.info("[bybit] Orderbook stream bağlandı.")
             async for msg in ws:
@@ -83,7 +83,7 @@ class BybitExchange(BaseExchange):
 
     async def _ws_liquidations(self):
         subs = [f"liquidation.{self._normalize_symbol(s)}" for s in self.symbols]
-        async with websockets.connect(WS_LINEAR, ping_interval=20) as ws:
+        async with websockets.connect(WS_LINEAR, **self.WS_KWARGS) as ws:
             await ws.send(json.dumps({"op": "subscribe", "args": subs}))
             logger.info("[bybit] Likidasyon stream bağlandı.")
             async for msg in ws:
